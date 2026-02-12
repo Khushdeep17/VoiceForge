@@ -1,0 +1,32 @@
+# python
+__pycache__/
+*.pyc
+
+# env
+.env
+.venv
+voiceforge/
+
+# conda
+*.conda
+*.env
+
+# data
+data/raw/
+data/processed/
+
+# checkpoints
+*.pt
+*.pth
+checkpoints/
+
+# logs
+logs/
+mlruns/
+
+# notebooks
+.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
