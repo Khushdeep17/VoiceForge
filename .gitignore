@@ -1,6 +1,7 @@
 # python
 __pycache__/
 *.pyc
+*.npy
 
 # env
 .env
@@ -30,3 +31,8 @@ mlruns/
 # OS
 .DS_Store
 Thumbs.db
+
+checkpoints/
+logs/
+experiments/
+dummy_tts.pt
