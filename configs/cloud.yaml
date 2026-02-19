@@ -1,8 +1,0 @@
-device: "cuda"
-
-batch_size: 32
-num_workers: 8
-
-train_split: 0.95
-
-seed: 42

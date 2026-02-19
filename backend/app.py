@@ -1,44 +1,124 @@
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 import numpy as np
-import uuid
-import os
+import io
 from scipy.io.wavfile import write
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
-from model_loader import synthesize
+from model_loader import synthesize, load_model
 
-app = FastAPI(title="VoiceForge API")
 
-OUTPUT_DIR = "inference"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+# =====================================================
+# FastAPI Init
+# =====================================================
 
+app = FastAPI(
+    title="VoiceForge API",
+    version="1.0.0",
+    description="High performance TTS inference API"
+)
+
+# Thread pool for CPU-bound inference
+executor = ThreadPoolExecutor(max_workers=1)
+
+
+# =====================================================
+# Request Schema
+# =====================================================
 
 class TTSRequest(BaseModel):
-    text: str
+    text: str = Field(
+        ...,
+        min_length=1,
+        max_length=300,
+        description="Text to synthesize"
+    )
 
+
+# =====================================================
+# Startup Event (Preload model)
+# =====================================================
+
+@app.on_event("startup")
+def startup_event():
+    print("[VoiceForge] Preloading model...")
+    load_model()
+    print("[VoiceForge] Ready for inference")
+
+
+# =====================================================
+# Health Check
+# =====================================================
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ok",
+        "service": "voiceforge",
+        "model": "loaded"
+    }
+
+
+# =====================================================
+# Async wrapper for CPU inference
+# =====================================================
+
+async def synthesize_async(text: str):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(executor, synthesize, text)
+
+
+# =====================================================
+# TTS Endpoint
+# =====================================================
 
 @app.post("/synthesize")
-def generate_audio(request: TTSRequest):
-    wav, sr = synthesize(request.text)
+async def generate_audio(request: TTSRequest):
 
-    # Ensure proper types
-    wav = np.array(wav).squeeze()
-    sr = int(sr)
+    text = request.text.strip()
 
-    # Avoid division by zero
-    max_val = np.max(np.abs(wav))
-    if max_val > 0:
-        wav = wav / max_val
+    if not text:
+        raise HTTPException(
+            status_code=400,
+            detail="Text cannot be empty"
+        )
 
-    # Convert to int16
-    wav_int16 = (wav * 32767).astype(np.int16)
+    try:
 
-    # Unique filename
-    file_id = str(uuid.uuid4())
-    output_path = os.path.join(OUTPUT_DIR, f"{file_id}.wav")
+        wav, sr = await synthesize_async(text)
 
-    # Write WAV
-    write(output_path, sr, wav_int16)
+        wav = np.asarray(wav).squeeze()
 
-    return FileResponse(output_path, media_type="audio/wav")
+        # Normalize safely
+        max_val = np.max(np.abs(wav))
+
+        if max_val > 0:
+            wav = wav / max_val
+
+        wav_int16 = (wav * 32767).astype(np.int16)
+
+        buffer = io.BytesIO()
+
+        write(buffer, int(sr), wav_int16)
+
+        buffer.seek(0)
+
+        return StreamingResponse(
+            buffer,
+            media_type="audio/wav",
+            headers={
+                "Content-Disposition": "inline; filename=voiceforge.wav",
+                "X-VoiceForge": "TTS"
+            }
+        )
+
+    except Exception as e:
+
+        print(f"[VoiceForge ERROR] {str(e)}")
+
+        raise HTTPException(
+            status_code=500,
+            detail="TTS generation failed"
+        )

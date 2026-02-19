@@ -1,8 +1,0 @@
-device: "cpu"
-
-batch_size: 4
-num_workers: 2
-
-train_split: 0.95
-
-seed: 42
