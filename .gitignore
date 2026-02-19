@@ -36,3 +36,6 @@ checkpoints/
 logs/
 experiments/
 dummy_tts.pt
+
+venv
+*.wav

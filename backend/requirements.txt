@@ -1,0 +1,7 @@
+torch
+torchaudio
+TTS==0.22.0
+fastapi
+uvicorn
+python-multipart
+soundfile
