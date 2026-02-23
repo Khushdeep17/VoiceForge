@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Empathy Engine</title>
+</head>
+
+<body>
+
+<h2>Empathy Engine 🎤</h2>
+
+<form action="/speak-ui" method="post">
+
+<textarea name="text" rows="5" cols="50"></textarea>
+
+<br><br>
+
+<button type="submit">Generate Speech</button>
+
+</form>
+
+{% if emotion %}
+
+<h3>Emotion detected: {{ emotion }}</h3>
+
+<p>Voice style: {{ style }}</p>
+
+<audio controls>
+    <source src="/{{ audio_file }}" type="audio/wav">
+</audio>
+
+{% endif %}
+
+</body>
+
+</html>
