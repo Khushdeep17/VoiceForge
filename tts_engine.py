@@ -1,50 +1,46 @@
 import pyttsx3
 
+BASE_RATE = 170
+BASE_VOLUME = 0.8
+
 
 def get_voice_params(emotion: str, intensity: float):
 
-    base_rate = 170
-    base_volume = 0.8
+    e = emotion.lower()
+    i = abs(float(intensity))
 
-    if emotion == "excited":
-        rate = base_rate + int(intensity * 80)
-        volume = 1.0
-        style = "Highly energetic and enthusiastic"
+    if e == "joy":
+        return BASE_RATE + int(i * 80), 1.0, "energetic"
 
-    elif emotion == "happy":
-        rate = base_rate + int(intensity * 40)
-        volume = 0.95
-        style = "Warm and positive"
+    if e == "surprise":
+        return BASE_RATE + int(i * 60), 1.0, "excited"
 
-    elif emotion == "neutral":
-        rate = base_rate
-        volume = base_volume
-        style = "Calm and balanced"
+    if e == "anger":
+        return BASE_RATE - int(i * 40), 0.9, "firm"
 
-    elif emotion == "concerned":
-        rate = base_rate - int(abs(intensity) * 30)
-        volume = 0.7
-        style = "Soft and cautious"
+    if e == "sadness":
+        return BASE_RATE - int(i * 60), 0.6, "soft"
 
-    elif emotion == "frustrated":
-        rate = base_rate - int(abs(intensity) * 60)
-        volume = 0.6
-        style = "Firm and serious"
+    if e == "fear":
+        return BASE_RATE - int(i * 30), 0.7, "cautious"
 
-    else:
-        rate = base_rate
-        volume = base_volume
-        style = "Default voice"
+    if e == "disgust":
+        return BASE_RATE - int(i * 30), 0.7, "disapproving"
 
-    return rate, volume, style
+    if e == "neutral":
+        return BASE_RATE, BASE_VOLUME, "calm"
+
+    return BASE_RATE, BASE_VOLUME, "default"
 
 
 def generate_audio(text: str, rate: int, volume: float, filename: str):
 
     engine = pyttsx3.init()
 
-    engine.setProperty("rate", rate)
-    engine.setProperty("volume", volume)
+    engine.setProperty("rate", int(rate))
+    engine.setProperty("volume", float(volume))
 
     engine.save_to_file(text, filename)
     engine.runAndWait()
+
+    engine.stop()

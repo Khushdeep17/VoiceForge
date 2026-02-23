@@ -25,8 +25,8 @@
 
 <p>Voice style: {{ style }}</p>
 
-<audio controls>
-    <source src="/{{ audio_file }}" type="audio/wav">
+<audio controls autoplay>
+    <source src="{{ audio_file }}" type="audio/wav">
 </audio>
 
 {% endif %}
