@@ -1,135 +1,117 @@
-# Empathy Engine 🎙️
+# VoiceForge 🎙️
 
-Emotion-Aware Text-to-Speech system that detects emotion from text and generates expressive speech with dynamically adjusted voice parameters.
-
-The system analyzes input text, classifies emotion, and modulates speech rate, volume, and pitch to produce emotionally appropriate audio output.
+Emotion-aware Text-to-Speech system that detects emotion from text and generates expressive speech with dynamically adjusted voice parameters and named voice personas.
 
 ---
 
-# Features
+## Project Structure
 
-* Emotion detection from text input
-* Emotion-based speech modulation (rate, volume, pitch)
-* Generates playable audio file (.wav)
-* CLI interface for quick testing
-* FastAPI web interface with browser playback
-* Fully local and runnable
-
----
-
-# Setup Instructions
-
-## Step 1 — Clone the repository
-
-```bash
-git clone https://github.com/Khushdeep17/empathy-engine.git
-cd empathy-engine
+```
+VoiceForge/
+├── voiceforge/              # core package
+│   ├── emotion/
+│   │   ├── detector.py      # unified emotion detection (transformer + VADER fallback)
+│   │   └── schemas.py       # EmotionResult dataclass
+│   └── tts/
+│       ├── engine.py        # pyttsx3 TTS synthesis
+│       ├── personas.py      # named voice persona profiles
+│       └── ssml.py          # SSML prosody builder
+├── api/
+│   ├── main.py              # FastAPI app
+│   ├── schemas.py           # Pydantic request/response models
+│   └── routes/
+│       ├── speak.py         # /speak, /, /speak-ui
+│       └── health.py        # /health, /personas
+├── cli/
+│   └── main.py              # interactive CLI
+├── configs/
+│   └── personas.yaml        # voice persona definitions
+├── outputs/                 # generated audio and visualizations
+└── templates/               # Jinja2 HTML templates
 ```
 
 ---
 
-## Step 2 — (Optional) Create virtual environment
-
-Recommended but not required.
-
-**Windows**
+## Setup
 
 ```bash
+git clone https://github.com/Khushdeep17/VoiceForge.git
+cd VoiceForge
 python -m venv venv
-venv\Scripts\activate
-```
-
-**Linux / Mac**
-
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
----
-
-## Step 3 — Install dependencies
-
-This step is REQUIRED.
-
-```bash
+# Windows: venv\Scripts\activate  |  Linux/Mac: source venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ---
 
-# Run the Project
+## Run
 
-You can run the project using either CLI or Web Interface.
-
----
-
-## Option 1 — Run CLI
-
+**CLI**
 ```bash
-python cli.py
+python -m cli.main
 ```
 
-Enter text when prompted.
-
-Audio file will be generated in the outputs folder.
-
----
-
-## Option 2 — Run FastAPI Web Server
-
-Start the server:
-
+**Web server**
 ```bash
-uvicorn app:app --reload
+uvicorn api.main:app --reload
 ```
+Open `http://127.0.0.1:8000`
 
-Open browser and go to:
-
+**API docs**
 ```
-http://127.0.0.1:8000
+http://127.0.0.1:8000/docs
 ```
-
-Enter text and audio will be generated and played in browser.
 
 ---
 
-# Emotion to Voice Mapping Logic
+## API Endpoints
 
-The system detects emotion and adjusts speech parameters dynamically:
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/speak` | JSON API — emotion detection + TTS |
+| GET | `/health` | Service health check |
+| GET | `/personas` | List all available voice personas |
+| GET | `/` | Web UI |
+| POST | `/speak-ui` | Web UI form handler |
 
-| Emotion | Rate   | Volume | Effect          |
-| ------- | ------ | ------ | --------------- |
-| Joy     | Faster | Higher | Energetic voice |
-| Sadness | Slower | Lower  | Calm voice      |
-| Anger   | Faster | Higher | Intense voice   |
-| Fear    | Slower | Medium | Soft voice      |
-| Neutral | Normal | Normal | Balanced voice  |
-
-This mapping creates emotionally expressive speech output instead of robotic voice.
-
----
-
-# Output
-
-Generated audio files are saved in:
-
-```
-outputs/
+**Example request with persona:**
+```json
+POST /speak
+{
+  "text": "I just got the job!",
+  "mode": "hybrid",
+  "persona": "broadcaster"
+}
 ```
 
-Format: `.wav`
+---
+
+## Voice Personas
+
+Named profiles defined in `configs/personas.yaml`. Add your own by editing the file.
+
+| Persona | Style | Rate | Volume |
+|---------|-------|------|--------|
+| narrator | authoritative | 160 | 0.85 |
+| therapist | gentle | 140 | 0.65 |
+| broadcaster | energetic | 185 | 0.95 |
+| assistant | neutral | 170 | 0.80 |
+| storyteller | expressive | 155 | 0.75 |
 
 ---
 
-# Tech Stack
+## Emotion → Voice Mapping
 
-* Python
-* FastAPI
-* Transformers
-* PyTorch
-* VADER Sentiment
-* Local Neural TTS
+| Emotion | Effect |
+|---------|--------|
+| Joy | Faster, louder — energetic |
+| Sadness | Slower, quieter — soft |
+| Anger | Faster, firm |
+| Fear | Slower, medium — cautious |
+| Neutral | Balanced |
 
 ---
 
+## Tech Stack
+
+Python · FastAPI · Transformers · pyttsx3 · VADER · Matplotlib · PyYAML

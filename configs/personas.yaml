@@ -1,0 +1,34 @@
+narrator:
+  name: narrator
+  rate: 160
+  volume: 0.85
+  style: authoritative
+  description: "Deep, measured storytelling voice"
+
+therapist:
+  name: therapist
+  rate: 140
+  volume: 0.65
+  style: gentle
+  description: "Slow, soft, reassuring tone"
+
+broadcaster:
+  name: broadcaster
+  rate: 185
+  volume: 0.95
+  style: energetic
+  description: "Fast, punchy, confident delivery"
+
+assistant:
+  name: assistant
+  rate: 170
+  volume: 0.80
+  style: neutral
+  description: "Balanced, clear, professional voice"
+
+storyteller:
+  name: storyteller
+  rate: 155
+  volume: 0.75
+  style: expressive
+  description: "Warm, engaging, varied pacing"
