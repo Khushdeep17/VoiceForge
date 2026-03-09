@@ -9,3 +9,4 @@ jinja2
 python-multipart
 pydantic
 pyyaml
+boto3

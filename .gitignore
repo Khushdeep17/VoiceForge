@@ -1,3 +1,52 @@
-venv
-__pycache__
-outputs
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+
+# MLflow
+mlruns/
+mlflow.db
+
+# Generated audio files
+outputs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Docker
+*.pid
+
+# credentials — never commit these
+.env
+
+# generated outputs
+outputs/
+
+# MLflow experiment data
+mlruns/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# model cache
+.cache/

@@ -18,5 +18,6 @@ class SpeakResponse(BaseModel):
     confidence: float
     voice_parameters: VoiceParameters
     voice_style: str
-    audio_file: str
+    audio_file: str                          # local path — always present
+    s3_audio_url: Optional[str] = None      # presigned S3 URL — present when S3 configured
     emotion_visualization: Optional[str] = None
