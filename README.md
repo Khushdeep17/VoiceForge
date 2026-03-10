@@ -1,117 +1,139 @@
 # VoiceForge 🎙️
 
-Emotion-aware Text-to-Speech system that detects emotion from text and generates expressive speech with dynamically adjusted voice parameters and named voice personas.
+VoiceForge is an emotion-aware Text-to-Speech inference system that detects emotion from text using a transformer model and generates expressive speech with dynamically conditioned voice parameters, YAML-driven personas, MLflow observability, and AWS S3 artifact storage.
+
+Built as a modular production service — not a script.
 
 ---
 
-## Project Structure
+## ⚙️ System Architecture
+
+```
+Text Input (API / CLI)
+        ↓
+Emotion Detection (DistilRoBERTa + VADER fallback)
+        ↓
+Voice Parameter Conditioning (Emotion → Rate / Volume)
+        ↓  ↕ Persona Override (YAML profiles)
+TTS Synthesis (pyttsx3 → .wav)
+        ↓
+S3 Artifact Upload (boto3 → presigned URL)
+        ↓
+MLflow Inference Logging (confidence, params, latency)
+```
+
+Modular package structure — emotion, TTS, storage, and metrics layers fully separated.
+
+---
+
+## 🚀 Key Features
+
+- **Hybrid emotion pipeline** — DistilRoBERTa (`j-hartmann/emotion-english-distilroberta-base`) classifying 7 emotions with full per-class confidence scores; VADER as silent fallback
+- **Emotion-conditioned TTS** — rate and volume dynamically scaled by emotion label and confidence intensity via pyttsx3
+- **5 YAML-driven voice personas** — narrator, therapist, broadcaster, assistant, storyteller; override emotion params without touching code
+- **MLflow inference tracking** — every request logs emotion, confidence, voice params, per-class scores, emotion latency, and P95 end-to-end latency
+- **AWS S3 artifact storage** — audio and visualizations uploaded via boto3 with presigned URL delivery; graceful local fallback if S3 unavailable
+- **`/metrics` aggregation endpoint** — live emotion distribution, avg/P95 latency, total request count from MLflow store
+
+---
+
+## 🧠 Tech Stack
+
+| Layer | Technologies |
+|-------|-------------|
+| API | FastAPI, Pydantic, Jinja2 |
+| Emotion | Transformers (DistilRoBERTa), VADER |
+| TTS | pyttsx3, SSML |
+| Observability | MLflow |
+| Storage | AWS S3, boto3 |
+| Config | PyYAML |
+| CLI | Python argparse |
+
+---
+
+## 🗂️ Project Structure
 
 ```
 VoiceForge/
-├── voiceforge/              # core package
+├── voiceforge/
 │   ├── emotion/
-│   │   ├── detector.py      # unified emotion detection (transformer + VADER fallback)
-│   │   └── schemas.py       # EmotionResult dataclass
-│   └── tts/
-│       ├── engine.py        # pyttsx3 TTS synthesis
-│       ├── personas.py      # named voice persona profiles
-│       └── ssml.py          # SSML prosody builder
+│   │   ├── detector.py       # DistilRoBERTa + VADER hybrid pipeline
+│   │   └── schemas.py        # EmotionResult dataclass
+│   ├── tts/
+│   │   ├── engine.py         # pyttsx3 synthesis + emotion conditioning
+│   │   ├── personas.py       # YAML-driven persona loader
+│   │   └── ssml.py           # SSML prosody builder
+│   ├── metrics/
+│   │   └── tracker.py        # MLflow logging + aggregate stats
+│   └── storage/
+│       └── s3.py             # S3 upload with local fallback
 ├── api/
-│   ├── main.py              # FastAPI app
-│   ├── schemas.py           # Pydantic request/response models
+│   ├── main.py
+│   ├── schemas.py
 │   └── routes/
-│       ├── speak.py         # /speak, /, /speak-ui
-│       └── health.py        # /health, /personas
-├── cli/
-│   └── main.py              # interactive CLI
-├── configs/
-│   └── personas.yaml        # voice persona definitions
-├── outputs/                 # generated audio and visualizations
-└── templates/               # Jinja2 HTML templates
+│       ├── speak.py          # /speak, /speak-ui
+│       └── health.py         # /health, /personas, /metrics
+├── cli/main.py
+└── configs/personas.yaml
 ```
 
 ---
 
-## Setup
+## 📡 API
 
-```bash
-git clone https://github.com/Khushdeep17/VoiceForge.git
-cd VoiceForge
-python -m venv venv
-# Windows: venv\Scripts\activate  |  Linux/Mac: source venv/bin/activate
-pip install -r requirements.txt
-```
-
----
-
-## Run
-
-**CLI**
-```bash
-python -m cli.main
-```
-
-**Web server**
-```bash
-uvicorn api.main:app --reload
-```
-Open `http://127.0.0.1:8000`
-
-**API docs**
-```
-http://127.0.0.1:8000/docs
-```
-
----
-
-## API Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/speak` | JSON API — emotion detection + TTS |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/speak` | Emotion detection → TTS synthesis → S3 upload |
+| GET | `/metrics` | Emotion distribution, avg/P95 latency, total requests |
+| GET | `/personas` | List all YAML-configured voice personas |
 | GET | `/health` | Service health check |
-| GET | `/personas` | List all available voice personas |
-| GET | `/` | Web UI |
-| POST | `/speak-ui` | Web UI form handler |
 
-**Example request with persona:**
+**Request:**
 ```json
-POST /speak
+{ "text": "I just got the job!", "mode": "hybrid", "persona": "broadcaster" }
+```
+
+**Response:**
+```json
 {
-  "text": "I just got the job!",
-  "mode": "hybrid",
-  "persona": "broadcaster"
+  "emotion": "joy",
+  "confidence": 0.912,
+  "voice_parameters": { "rate": 185, "volume": 0.95 },
+  "voice_style": "energetic",
+  "audio_file": "/outputs/abc.wav",
+  "s3_audio_url": "https://s3.amazonaws.com/..."
 }
 ```
 
 ---
 
-## Voice Personas
+## ☁️ AWS S3 Setup
 
-Named profiles defined in `configs/personas.yaml`. Add your own by editing the file.
+1. Create IAM user → attach `AmazonS3FullAccess` → generate access keys
+2. Create S3 bucket (Block Public Access ON — presigned URLs handle access)
+3. Configure:
 
-| Persona | Style | Rate | Volume |
-|---------|-------|------|--------|
-| narrator | authoritative | 160 | 0.85 |
-| therapist | gentle | 140 | 0.65 |
-| broadcaster | energetic | 185 | 0.95 |
-| assistant | neutral | 170 | 0.80 |
-| storyteller | expressive | 155 | 0.75 |
+```bash
+aws configure          # key, secret, region
+```
 
 ---
 
-## Emotion → Voice Mapping
+## 🏃 Quick Start
 
-| Emotion | Effect |
-|---------|--------|
-| Joy | Faster, louder — energetic |
-| Sadness | Slower, quieter — soft |
-| Anger | Faster, firm |
-| Fear | Slower, medium — cautious |
-| Neutral | Balanced |
+```bash
+pip install -r requirements.txt
+uvicorn api.main:app --reload    # http://127.0.0.1:8000
+mlflow ui                        # http://127.0.0.1:5000
+python -m cli.main
+```
 
 ---
 
-## Tech Stack
+## 🧩 What This Project Demonstrates
 
-Python · FastAPI · Transformers · pyttsx3 · VADER · Matplotlib · PyYAML
+- Transformer-based ML inference pipeline with production fallback strategy
+- Emotion-conditioned generative audio output with configurable persona system
+- MLflow observability instrumentation on a live inference service
+- AWS S3 artifact management with presigned URL delivery and graceful degradation
+- Modular FastAPI service design with separated concerns across emotion, TTS, storage, and metrics layers
