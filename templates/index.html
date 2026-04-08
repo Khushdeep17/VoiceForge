@@ -40,7 +40,7 @@
 
 <h3>Emotion detected: {{ emotion }}</h3>
 <p>Confidence: {{ confidence }}</p>
-<p>Persona: {{ persona }}</p>
+<p>Persona: {{ persona if persona else "default" }}</p>
 
 <audio controls autoplay>
     <source src="{{ audio_file }}" type="audio/wav">
